@@ -1,0 +1,23 @@
+[package]
+name = "mytop-linux"
+version = "0.1.0"
+edition = "2021"
+description = "Linux port of MyTop — an offline Material 3 game collection"
+
+[features]
+default = ["desktop"]
+desktop = ["dep:gtk", "dep:wry", "dep:base64"]
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rusqlite = { version = "0.38", features = ["bundled"] }
+url = "2"
+gtk = { version = "0.18", optional = true }
+wry = { version = "0.57", default-features = false, features = ["os-webview"], optional = true }
+base64 = { version = "0.22", optional = true }
+
+[[bin]]
+name = "mytop-linux"
+path = "src/main.rs"
+required-features = ["desktop"]

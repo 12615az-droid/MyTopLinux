@@ -1,0 +1,53 @@
+(async()=>{
+ const checks=[];
+ const assert=(condition,message)=>{if(!condition)throw Error(message);checks.push(message);};
+ const click=async(action,attributes={})=>act(action,{dataset:attributes});
+ const settle=()=>new Promise(r=>setTimeout(r,450));
+ const screenshot=async(name)=>{await settle();await rpc('testScreenshot',name);};
+ try{
+  await window.ready;
+  assert(!!$('#search'),'Native WebView loaded and IPC initialized');
+  assert($('.empty')!==null,'Empty collection');
+  await saveAppearance({languageTag:'ru',themeMode:'LIGHT',dynamicColors:false});
+  await click('add');
+  $('#game-form [name=title]').value='Ведьмак 3';
+  $('#game-form [name=series]').value='The Witcher';
+  $('#game-form [name=universe]').value='Сапковский';
+  $('#game-form [name=rating]').value='9.5';
+  $('#game-form [name=releaseYear]').value='2015';
+  $('#game-form [name=opinion]').value='Отличная игра';
+  $('#game-form [name=playtimeHours]').value='125.5';
+  $('[data-list-input=genres]').value='RPG';await click('listAdd',{key:'genres'});
+  $('[data-list-input=platforms]').value='Linux';await click('listAdd',{key:'platforms'});
+  $('#completion-date').value='2026-10-22';await click('dateAdd');
+  await click('increment');
+  await screenshot('editor');
+  await click('saveGame');
+  assert(state.collection.games.length===1,'Create through editor');
+  const saved=state.collection.games[0];
+  assert(saved.playtimeHours===125.5&&saved.genres[0]==='RPG'&&saved.completionDates[0]==='22.10.2026','All editor metadata persisted');
+  await rpc('save',{...blankGame(),title:'Half-Life 2',rating:9.8,status:'COMPLETED',releaseYear:2004});
+  await rpc('save',{...blankGame(),title:'Portal 2',rating:9.7,status:'COMPLETED',releaseYear:2011});
+  await refresh();
+  assert($('.game-title').textContent==='Half-Life 2','Rating sort reflected in cards');
+  assert($('#statistics').textContent.includes('9,7'),'Selection statistics');
+  await screenshot('main');
+  state.query.search='\tВЕДЬ\u00a0linux';await refresh();assert(state.collection.games.length===1,'Unicode search through native Rust');
+  filters();await click('filterStatus',{value:'COMPLETED'});assert(state.collection.games.length===0,'Combined filters');
+  await click('filterReset');closeDialog();state.query.search='';await refresh();
+  await click('edit',{id:String(saved.id)});$('#game-form [name=title]').value='The Witcher 3';await click('saveGame');
+  const edited=state.collection.games.find(g=>g.id===saved.id);assert(edited.opinion==='Отличная игра'&&edited.playtimeHours===125.5,'Editing preserves metadata');
+  details(saved.id);assert($('#dialog').textContent.includes('Отличная игра'),'Details include opinion');closeDialog();
+  exportDialog();assert($('#export-form').textContent.includes('JSON'),'Export settings');closeDialog();
+  importDialog();assert($('#dialog').textContent.includes('10 000'),'Import help');closeDialog();
+  await navigate('settings');await navigate('appearance');
+  await saveAppearance({accentHex:'#006A8E',compactCards:true,corners:'SOFT',textScale:1.1});
+  const settings=await rpc('init');assert(settings.appearance.compactCards&&settings.appearance.accentHex==='#006A8E','Appearance persists in SQLite');
+  await screenshot('appearance');
+  for(const lang of Object.keys(languages)){await saveAppearance({languageTag:lang});assert(!$('#app').textContent.includes('undefined'),'Locale '+lang);}
+  await saveAppearance({languageTag:'ru',themeMode:'DARK',accentHex:'#6650A4',compactCards:false,textScale:1});await navigate('main');await screenshot('dark');
+  await navigate('sync');$('#syncEnabled').checked=true;$('[name=serverUrl]').value='https://example.com';await click('saveSync');assert(await rpc('syncNow')==='sync_unavailable','Sync matches unavailable mobile gateway');
+  await navigate('main');await click('delete',{id:String(saved.id)});assert(state.collection.games.length===3,'Delete requires confirmation');await click('confirmDelete',{id:String(saved.id)});assert(state.collection.games.length===2,'Confirmed delete');
+  await rpc('testResult',{ok:true,checks});
+ }catch(error){await rpc('testResult',{ok:false,error:error.stack||String(error),checks});}
+})();

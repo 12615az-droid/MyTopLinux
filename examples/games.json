@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "games": [
+    {
+      "title": "Моя любимая игра",
+      "rating": 9.5,
+      "status": "COMPLETED",
+      "completions": 2,
+      "genres": ["RPG"],
+      "platforms": ["PC"],
+      "tags": ["Любимое"],
+      "releaseYear": 2025,
+      "opinion": "Пример записи. Замените своими данными.",
+      "playtimeHours": 48.5
+    }
+  ]
+}

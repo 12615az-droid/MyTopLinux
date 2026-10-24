@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=MyTop
+Name[ru]=Мой топ
+Comment=Offline game collection
+Exec=mytop-linux
+Icon=mytop-linux
+Terminal=false
+Type=Application
+Categories=Game;Utility;
+StartupWMClass=mytop-linux
